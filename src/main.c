@@ -66,6 +66,7 @@ main(int argc, char* argv[])
 	while (1)
 	{
 		// Nothing is going on here...
+		// TODO: Create a timer interrupt to print frequency and period
 	}
 
 	return 0;
@@ -94,7 +95,7 @@ void myTIM2_Init()
 	// Relevant register: RCC->APB1ENR
 	RCC->APB1ENR |= 0x1;
 
-	/* Configure TIM2: buffer auto-reload, count up, stop on overflow,
+	/* Configure TIM2: buffer auto-reload, count down, continue counting on overflow,
 	 * enable update events, interrupt on overflow only */
 	// Relevant register: TIM2->CR1
 	TIM2->CR1 |= TIM_CR1_ARPE | TIM_CR1_DIR;
@@ -129,6 +130,7 @@ void myEXTI_Init()
 {
 	/* Map EXTI1 line to PA1 */
 	// Relevant register: SYSCFG->EXTICR[0]
+	SYSCFG->EXTICR[0] &= ~0x70;
 
 	/* EXTI1 line interrupts: set rising-edge trigger */
 	// Relevant register: EXTI->RTSR
@@ -138,7 +140,7 @@ void myEXTI_Init()
 	// Relevant register: EXTI->IMR
 	EXTI->IMR |= 0x2;
 
-	/* Assign EXTI1 interrupt priority = 0 in NVIC */
+	/* Assign EXTI1 interrupt priority = 64 in NVIC */
 	// Relevant register: NVIC->IP[1], or use NVIC_SetPriority
 	NVIC_SetPriority(EXTI0_1_IRQn, 64);
 
@@ -194,11 +196,14 @@ void EXTI0_1_IRQHandler()
 		// 2. Clear EXTI1 interrupt pending flag (EXTI->PR).
 		//
 		uint32_t this_time = TIM2->CNT;
+		static int count = 0;
 		period = (last_time - this_time) + (overflow_cnt * myTIM2_PERIOD);
 		overflow_cnt = 0;
 		last_time = this_time;
+		count++;
 
-		trace_printf("\n***** Period: %d us, Frequency: %d mHz ******\n", period / 48, 48000000000 / period);
+		if( (count % 50) == 0 )
+			trace_printf("\n***** Period: %d us, Frequency: %d mHz ******\n", period / 48, 48000000000 / period);
 
 		EXTI->PR |= 0x2;
 	}
