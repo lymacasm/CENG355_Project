@@ -39,12 +39,15 @@
 
 /* Clock prescaler for TIM2 timer: no prescaling */
 #define myTIM2_PRESCALER ((uint16_t)0x0000)
+#define myTIM3_PRESCALER ((uint16_t)0x02DC)
 /* Maximum possible setting for overflow */
 #define myTIM2_PERIOD ((uint32_t)0xFFFFFFFF)
+#define myTIM3_PERIOD ((uint16_t)0xFFFF)
 //#define myTIM2_PERIOD ((uint32_t)0xFFFFFFF)
 
 void myGPIOA_Init(void);
 void myTIM2_Init(void);
+void myTIM3_Init(void);
 void myEXTI_Init(void);
 
 // Your global variables...
@@ -62,6 +65,7 @@ main(int argc, char* argv[])
 	myGPIOA_Init();		/* Initialize I/O port PA */
 	myTIM2_Init();		/* Initialize timer TIM2 */
 	myEXTI_Init();		/* Initialize EXTI */
+	myTIM3_Init();
 
 	while (1)
 	{
@@ -125,6 +129,42 @@ void myTIM2_Init()
 	TIM2->CR1 |= TIM_CR1_CEN;
 }
 
+void myTIM3_Init()
+{
+	/* Enable clock for TIM2 peripheral */
+	// Relevant register: RCC->APB1ENR
+	RCC->APB1ENR |= 0x2;
+
+	/* Configure TIM2: buffer auto-reload, count down, continue counting on overflow,
+	 * enable update events, interrupt on overflow only */
+	// Relevant register: TIM2->CR1
+	TIM3->CR1 |= TIM_CR1_ARPE | TIM_CR1_DIR;
+
+	/* Set clock prescaler value */
+	TIM3->PSC = myTIM3_PRESCALER;
+	/* Set auto-reloaded delay */
+	TIM3->ARR = myTIM3_PERIOD;
+
+	/* Update timer registers */
+	// Relevant register: TIM2->EGR
+	TIM3->EGR |= TIM_EGR_UG;
+
+	/* Assign TIM2 interrupt priority = 0 in NVIC */
+	// Relevant register: NVIC->IP[3], or use NVIC_SetPriority
+	NVIC_SetPriority(TIM3_IRQn, 128);
+
+	/* Enable TIM2 interrupts in NVIC */
+	// Relevant register: NVIC->ISER[0], or use NVIC_EnableIRQ
+	NVIC_EnableIRQ(TIM3_IRQn);
+
+	/* Enable update interrupt generation */
+	// Relevant register: TIM2->DIER
+	TIM3->DIER |= TIM_DIER_UIE;
+
+	// Enable counter
+	TIM3->CR1 |= TIM_CR1_CEN;
+}
+
 
 void myEXTI_Init()
 {
@@ -169,6 +209,20 @@ void TIM2_IRQHandler()
 	}
 }
 
+/* This handler is declared in system/src/cmsis/vectors_stm32f0xx.c */
+void TIM3_IRQHandler()
+{
+	/* Check if update interrupt flag is indeed set */
+	if ((TIM3->SR & TIM_SR_UIF) != 0)
+	{
+		trace_printf("\n***** Period: %d us, Frequency: %d mHz ******\n", period / 48, 48000000000 / period);
+
+		/* Clear update interrupt flag */
+		// Relevant register: TIM2->SR
+		TIM3->SR &= ~TIM_SR_UIF;
+	}
+}
+
 
 /* This handler is declared in system/src/cmsis/vectors_stm32f0xx.c */
 void EXTI0_1_IRQHandler()
@@ -196,14 +250,9 @@ void EXTI0_1_IRQHandler()
 		// 2. Clear EXTI1 interrupt pending flag (EXTI->PR).
 		//
 		uint32_t this_time = TIM2->CNT;
-		static int count = 0;
 		period = (last_time - this_time) + (overflow_cnt * myTIM2_PERIOD);
 		overflow_cnt = 0;
 		last_time = this_time;
-		count++;
-
-		if( (count % 50) == 0 )
-			trace_printf("\n***** Period: %d us, Frequency: %d mHz ******\n", period / 48, 48000000000 / period);
 
 		EXTI->PR |= 0x2;
 	}
