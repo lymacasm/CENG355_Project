@@ -4,6 +4,7 @@
  *  Created on: Oct 23, 2017
  *      Author: lymacasm
  */
+#include "diag/Trace.h"
 #include "cmsis/cmsis_device.h"
 
 /* Clock prescaler for TIM2 timer: no prescaling */
@@ -172,7 +173,7 @@ void TIM3_IRQHandler()
 	/* Check if update interrupt flag is indeed set */
 	if ((TIM3->SR & TIM_SR_UIF) != 0)
 	{
-		//trace_printf("\n***** Period: %d ns, Frequency: %d mHz ******\n", (1000 * period) / 48, 48000000000 / period);
+		trace_printf("\n***** Period: %d ns, Frequency: %d mHz ******\n", (1000 * period) / 48, 48000000000 / period);
 
 		/* Clear update interrupt flag */
 		// Relevant register: TIM2->SR
