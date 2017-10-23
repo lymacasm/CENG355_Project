@@ -2,7 +2,7 @@
 // This file is part of the GNU ARM Eclipse distribution.
 // Copyright (c) 2014 Liviu Ionescu.
 //
-
+///////
 // ----------------------------------------------------------------------------
 // School: University of Victoria, Canada.
 // Course: CENG 355 "Microprocessor-Based Systems".
