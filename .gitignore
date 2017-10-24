@@ -65,7 +65,6 @@ Temporary Items
 # Directories that are not useful but in the project
 Debug/
 Release/
-.settings/
 #startup/
 
 # Windows

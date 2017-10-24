@@ -16,6 +16,8 @@
 #include "diag/Trace.h"
 #include "cmsis/cmsis_device.h"
 #include "frequency_period.h"
+#include "adc_dac.h"
+#include "lcd.h"
 
 // ----------------------------------------------------------------------------
 //
@@ -43,6 +45,8 @@ int
 main(int argc, char* argv[])
 {
 	freq_period_init();
+	lcd_init();
+	adc_dac_init();
 
 	trace_printf("This is Part 2 of Introductory Lab...\n");
 	trace_printf("System clock: %u Hz\n", SystemCoreClock);
