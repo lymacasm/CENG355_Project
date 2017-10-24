@@ -4,6 +4,8 @@
  *  Created on: Oct 23, 2017
  *      Author: lymacasm
  */
+#include "frequency_period.h"
+
 #include "diag/Trace.h"
 #include "cmsis/cmsis_device.h"
 
