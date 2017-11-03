@@ -8,6 +8,7 @@
 #ifndef LCD_H_
 #define LCD_H_
 
+#include <stdint.h>
 
 extern void lcd_init();
 extern void lcd_send_command(uint8_t command);
