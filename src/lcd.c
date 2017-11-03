@@ -147,7 +147,7 @@ static void lcd_send_data(uint8_t data)
 	/* Force LCK to 1 */
 	GPIOB->ODR |= GPIO_ODR_7;
 
-	/* TODO: Add a delay here
+	/* TODO: Add a delay here */
 }
 
 extern void lcd_send_command(uint8_t command)
