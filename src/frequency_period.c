@@ -147,6 +147,10 @@ extern int get_period_ns()
 
 extern int get_frequency_mHz()
 {
+	if(period == 0)
+	{
+		return 0;
+	}
 	return ( 48000000000 / period );
 }
 
@@ -175,7 +179,7 @@ void TIM3_IRQHandler()
 	/* Check if update interrupt flag is indeed set */
 	if ((TIM3->SR & TIM_SR_UIF) != 0)
 	{
-		trace_printf("\n***** Period: %d ns, Frequency: %d mHz ******\n", (1000 * period) / 48, 48000000000 / period);
+		trace_printf("\n***** Period: %d ns, Frequency: %d mHz ******\n", get_period_ns(), get_frequency_mHz());
 
 		/* Clear update interrupt flag */
 		// Relevant register: TIM2->SR

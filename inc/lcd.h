@@ -11,8 +11,8 @@
 
 extern void lcd_init();
 extern void lcd_send_command(uint8_t command);
-extern void lcd_display_frequency(int frequency);
-extern void lcd_display_resistance(int resistance);
+extern void lcd_display_frequency(uint32_t frequency);
+extern void lcd_display_resistance(uint32_t resistance);
 
 
 #endif /* LCD_H_ */
