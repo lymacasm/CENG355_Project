@@ -12,6 +12,16 @@
 #include "cmsis/cmsis_device.h"
 #include "stm32f0xx_spi.h"
 #include "diag/Trace.h"
+#include "string.h"
+
+/* At 48MHz, the following combo should give 5.46ms delay */
+
+/* Clock prescaler for TIM1 timer */
+#define myTIM1_PRESCALER ((uint16_t)0x0005)
+//#define myTIM1_PRESCALER ((uint16_t)0xFFFF)
+
+/* Maximum possible setting for overflow */
+#define myTIM1_PERIOD ((uint16_t)0xFFFF)
 
 /* LUT used to compute 10^index */
 uint32_t power_base10_lookup[10] = {
@@ -40,10 +50,6 @@ static void lcd_GPIO_init()
 
 	/* Set AF0 for both pins */
 	GPIOB->AFR[0] &= ~ (GPIO_AFRL_AFR3 | GPIO_AFRL_AFR5);
-
-	trace_printf("GPIOB->MODER : 0x%08x, %d\n", GPIOB->MODER);
-	trace_printf("GPIOB->OSPEEDR : 0x%08x\n", GPIOB->OSPEEDR);
-	trace_printf("GPIOB->AFR[0] : 0x%08x\n", GPIOB->AFR[0]);
 }
 
 static void lcd_SPI_init()
@@ -65,14 +71,29 @@ static void lcd_SPI_init()
 	SPI_InitStruct->SPI_CRCPolynomial = 7;
 	SPI_Init(SPI1, SPI_InitStruct);
 	SPI_Cmd(SPI1, ENABLE);
-
-	trace_printf("SPI1->CR1 : 0x%04x, %d\n", SPI1->CR1);
-	trace_printf("SPI1->CR2 : 0x%04x\n", SPI1->CR2);
 }
 
 static void lcd_TIM_init()
 {
+	/* Enable clock to timer1 */
+	RCC->APB2ENR |= RCC_APB2ENR_TIM1EN;
 
+	/* Set timer to one pulse mode, downcounting */
+	TIM1->CR1 |= TIM_CR1_OPM | TIM_CR1_DIR;
+
+	/* Set the timer prescaler */
+	TIM1->PSC = myTIM1_PRESCALER;
+
+	/* Set the timer period */
+	TIM1->ARR = myTIM1_PERIOD;
+
+	/* Update contents of registers */
+	TIM1->EGR |= TIM_EGR_UG;
+
+	/* Clear update event flag */
+	TIM1->SR &= ~TIM_SR_UIF;
+
+	/* Not enabling, as its in one-pulse mode. Only enable when we need to use it */
 }
 
 /* Converts a number to an ASCII string
@@ -156,24 +177,45 @@ static void lcd_send_data(uint8_t data)
 	GPIOB->ODR |= GPIO_ODR_7;
 
 	/* TODO: Add a delay here */
+	TIM1->CR1 |= TIM_CR1_CEN;
+	while((TIM1->SR & TIM_SR_UIF) == 0);
+	TIM1->SR &= ~TIM_SR_UIF;
 }
 
 extern void lcd_init()
 {
-	const uint8_t str_size = 20;
-	char text[str_size];
-	num_to_string(9567364, 6, text, str_size);
-
 	lcd_GPIO_init();
 	lcd_SPI_init();
+	lcd_TIM_init();
+
+	/* Put LCD in 4-bit mode */
+	lcd_send_data(0x02);
+	lcd_send_data(0x82);
+	lcd_send_data(0x02);
+
+	/* Finish LCD initialization */
+	lcd_send_command(0x28, 0); // DL = 0, N = 1, F = 0
+	lcd_send_command(0x0C, 0); // D = 1, C = 0, B = 0
+	lcd_send_command(0x06, 0); // I/D = 1, S = 0
+	lcd_send_command(0x01, 0); // Clear display
+
+	/* write something */
+	lcd_display_string("F:0000Hz", DISPLAY_ROW_1);
+	lcd_display_string("R:0000Oh", DISPLAY_ROW_2);
+
 }
 
-extern void lcd_send_command(uint8_t command)
+extern void lcd_send_command(uint8_t command, uint8_t rs)
 {
 	uint8_t high_nybble = (command & 0xF0) >> 4;
 	uint8_t low_nybble = command & 0xF;
-	const uint8_t ends = 0x00;
-	const uint8_t middle = 0x80;
+	uint8_t ends = 0x00;
+	uint8_t middle = 0x80;
+	if(rs)
+	{
+		ends |= 0x40;
+		middle |= 0x40;
+	}
 
 	/* Send high side first */
 	lcd_send_data(ends | high_nybble);
@@ -184,6 +226,15 @@ extern void lcd_send_command(uint8_t command)
 	lcd_send_data(ends | low_nybble);
 	lcd_send_data(middle | low_nybble);
 	lcd_send_data(ends | low_nybble);
+}
+
+extern void lcd_display_string(const char * display, uint8_t display_row)
+{
+	uint8_t i = 0;
+	lcd_send_command(display_row, 0);
+	for(i = 0; (i < strlen(display)) && (i < 8); i++){
+		lcd_send_command(display[i], 1);
+	}
 }
 
 extern void lcd_display_frequency(uint32_t frequency)
