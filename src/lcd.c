@@ -30,7 +30,7 @@ uint32_t power_base10_lookup[10] = {
 static void lcd_GPIO_init()
 {
 	/* Initialize the clock to GPIOB */
-	RCC_AHBPeriphResetCmd(RCC_AHBPeriph_GPIOB, ENABLE);
+	RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
 
 	/* Initialize the PB3 and PB5 pins for alternate function mode (SPI), and PB7 to output (Latch) */
 	GPIOB->MODER |= GPIO_MODER_MODER3_1 | GPIO_MODER_MODER5_1 | GPIO_MODER_MODER7_0;
@@ -40,6 +40,10 @@ static void lcd_GPIO_init()
 
 	/* Set AF0 for both pins */
 	GPIOB->AFR[0] &= ~ (GPIO_AFRL_AFR3 | GPIO_AFRL_AFR5);
+
+	trace_printf("GPIOB->MODER : 0x%08x, %d\n", GPIOB->MODER);
+	trace_printf("GPIOB->OSPEEDR : 0x%08x\n", GPIOB->OSPEEDR);
+	trace_printf("GPIOB->AFR[0] : 0x%08x\n", GPIOB->AFR[0]);
 }
 
 static void lcd_SPI_init()
@@ -47,14 +51,28 @@ static void lcd_SPI_init()
 	/* Enable clock to SPI1 */
 	RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
 
-	/* Set MSBFIRST, slowest baudrate, master mode */
-	SPI1->CR1 |= SPI_CR1_BR_0 | SPI_CR1_BR_1 | SPI_CR1_BR_2 | SPI_CR1_MSTR;
+	/* Initialize SPI */
+	SPI_InitTypeDef SPI_InitStructInfo;
+	SPI_InitTypeDef* SPI_InitStruct = &SPI_InitStructInfo;
+	SPI_InitStruct->SPI_Direction = SPI_Direction_1Line_Tx;
+	SPI_InitStruct->SPI_Mode = SPI_Mode_Master;
+	SPI_InitStruct->SPI_DataSize = SPI_DataSize_8b;
+	SPI_InitStruct->SPI_CPOL = SPI_CPOL_Low;
+	SPI_InitStruct->SPI_CPHA = SPI_CPHA_1Edge;
+	SPI_InitStruct->SPI_NSS = SPI_NSS_Soft;
+	SPI_InitStruct->SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_256;
+	SPI_InitStruct->SPI_FirstBit = SPI_FirstBit_MSB;
+	SPI_InitStruct->SPI_CRCPolynomial = 7;
+	SPI_Init(SPI1, SPI_InitStruct);
+	SPI_Cmd(SPI1, ENABLE);
 
-	/* Set SPI data length to 8 bits */
-	SPI1->CR2 |= SPI_CR2_DS_0 | SPI_CR2_DS_1 | SPI_CR2_DS_2;
+	trace_printf("SPI1->CR1 : 0x%04x, %d\n", SPI1->CR1);
+	trace_printf("SPI1->CR2 : 0x%04x\n", SPI1->CR2);
+}
 
-	/* Enable peripheral */
-	SPI1->CR1 |= SPI_CR1_SPE;
+static void lcd_TIM_init()
+{
+
 }
 
 /* Converts a number to an ASCII string
@@ -120,16 +138,6 @@ static void num_to_string(const uint32_t num, uint8_t precision, char * string, 
 	trace_printf("Number is %s with precision %d. Original: %d\n", string, precision, num);
 }
 
-extern void lcd_init()
-{
-	const uint8_t str_size = 20;
-	char text[str_size];
-	num_to_string(9567364, 6, text, str_size);
-
-	lcd_GPIO_init();
-	lcd_SPI_init();
-}
-
 static void lcd_send_data(uint8_t data)
 {
 	/* Force LCK signal to 0 */
@@ -148,6 +156,16 @@ static void lcd_send_data(uint8_t data)
 	GPIOB->ODR |= GPIO_ODR_7;
 
 	/* TODO: Add a delay here */
+}
+
+extern void lcd_init()
+{
+	const uint8_t str_size = 20;
+	char text[str_size];
+	num_to_string(9567364, 6, text, str_size);
+
+	lcd_GPIO_init();
+	lcd_SPI_init();
 }
 
 extern void lcd_send_command(uint8_t command)
