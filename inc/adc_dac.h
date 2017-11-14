@@ -10,7 +10,7 @@
 
 
 extern void adc_dac_init();
-extern int get_resistance_ohms();
+extern int get_resistance_ohms(int voltage);
 
 
 #endif /* ADC_DAC_H_ */
