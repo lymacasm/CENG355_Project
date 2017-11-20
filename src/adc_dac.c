@@ -5,6 +5,9 @@
  *      Author: lymacasm
  */
 #include "stm32f0xx_adc.h"
+#include "stm32f0xx_dac.h"
+#include "stm32f0xx_gpio.h"
+#include "stm32f0xx.h"
 #include "adc_dac.h"
 
 
@@ -18,7 +21,7 @@ extern void adc_dac_init()
 	ADC1->CR &= ~(ADC_CR_ADEN); //Sets ADEN bit to 0 which disables the ADC
 	ADC1->CR |= (ADC_CR_ADCAL); //Starts Calibration by setting bit to 1
 
-	while((ADC1->CR & ADC_CR_ADCAL)) //wait until calibration is done
+	while((ADC1->CR & ADC_CR_ADCAL) == 1) //wait until calibration is done???????????????????????
 
 //2. Set up ADC Clock
 
@@ -45,7 +48,8 @@ extern void adc_dac_init()
 
 //4. Configure Sampling Time
 
-	ADC1->SMPR |= (ADC_SMPR_SMP2_0 | ADC_SMPR_SMP1_0 | ADC_SMPR_SMP0_0);
+	ADC1->SMPR &= ~(ADC_SMPR_SMP_2 | ADC_SMPR_SMP_1 | ADC_SMPR_SMP_0); //000 - 1.5 ADC Clock Cycles
+  //ADC1->SMPR &= ~(ADC_SMPR_SMP)
 
 		/* Set bits [2:0] in order to set sample time
 		 * 000:   1.5  ADC clock cycles
@@ -98,9 +102,24 @@ extern void adc_dac_init()
 /* ---------------------------------------------------------- DAC ---------------------------------------------------------- */
 /* ------------------------------------------------------------------------------------------------------------------------- */
 
-	GPIOA-> MODER |= (GPIO_MODER_MODER4_1 | GPIO_MODER_MODER4_0); //Sets Pin A4 Bits to 11 which is Analog Mode
 
-	DAC-> CR |= DAC_CR_EN1; //Enables DAC by setting Bit 0 = 1, Which is EN1
+
+
+	//1. DAC Channel Enable
+		GPIOA->MODER |= (GPIO_MODER_MODER4_1 | GPIO_MODER_MODER4_0); //Sets Pin A4 Bits to 11 which is Analog Mode
+
+	//2. Output Buffer Enable
+		DAC->CR |= DAC_CR_BOFF1;
+
+	//3. DAC Data Format
+
+		//DAC->
+
+	//4. DAC Clock Enable
+
+
+	//5. DAC Enable
+		DAC->CR |= DAC_CR_EN1; //Enables DAC by setting Bit 0 = 1, Which is EN1
 
 
 
@@ -140,8 +159,6 @@ extern int get_resistance_ohms(int voltage)
 {
 	//This function will take the readings from the ADC
 	//Convert readings from ADC to ohms
-
-
 
 
 }
