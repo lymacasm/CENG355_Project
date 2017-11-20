@@ -10,7 +10,7 @@
 
 
 extern void adc_dac_init();
-extern int get_resistance_ohms(int voltage);
+extern int get_resistance_ohms();
 extern uint32_t get_adc();
 
 
