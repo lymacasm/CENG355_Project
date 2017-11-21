@@ -51,11 +51,12 @@ main(int argc, char* argv[])
 	trace_printf("This is Part 2 of Introductory Lab...\n");
 	trace_printf("System clock: %u Hz\n", SystemCoreClock);
 
-	int i = 0;
 	while (1)
 	{
 		// Nothing is going on here...
 		// TODO: Create a timer interrupt to print frequency and period
+		lcd_display_frequency(get_frequency_mHz() / 1000);
+		lcd_display_resistance(get_resistance_ohms());
 	}
 
 	return 0;
