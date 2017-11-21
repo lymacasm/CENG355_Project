@@ -179,7 +179,7 @@ void TIM3_IRQHandler()
 	/* Check if update interrupt flag is indeed set */
 	if ((TIM3->SR & TIM_SR_UIF) != 0)
 	{
-		trace_printf("\n***** Period: %d ns, Frequency: %d mHz ******\n", get_period_ns(), get_frequency_mHz());
+		//trace_printf("\n***** Period: %d ns, Frequency: %d mHz ******\n", get_period_ns(), get_frequency_mHz());
 
 		/* Clear update interrupt flag */
 		// Relevant register: TIM2->SR
