@@ -11,6 +11,7 @@
 
 extern void adc_dac_init();
 extern int get_resistance_ohms();
+extern uint32_t get_adc();
 
 
 #endif /* ADC_DAC_H_ */

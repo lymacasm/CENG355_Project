@@ -2,7 +2,7 @@
 // This file is part of the GNU ARM Eclipse distribution.
 // Copyright (c) 2014 Liviu Ionescu.
 //
-
+///////
 // ----------------------------------------------------------------------------
 // School: University of Victoria, Canada.
 // Course: CENG 355 "Microprocessor-Based Systems".
@@ -51,6 +51,7 @@ main(int argc, char* argv[])
 	trace_printf("This is Part 2 of Introductory Lab...\n");
 	trace_printf("System clock: %u Hz\n", SystemCoreClock);
 
+	int i = 0;
 	while (1)
 	{
 		// Nothing is going on here...
