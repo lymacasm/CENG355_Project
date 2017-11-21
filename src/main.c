@@ -56,9 +56,6 @@ main(int argc, char* argv[])
 	{
 		// Nothing is going on here...
 		// TODO: Create a timer interrupt to print frequency and period
-		//trace_printf("Pot Resistance: %d Ohms\n", get_resistance_ohms());
-		trace_printf("Measured voltage: %dmV\n", (get_adc() * 3300) / 0xFFF);
-		for(i = 0; i < 1000; i++);
 	}
 
 	return 0;

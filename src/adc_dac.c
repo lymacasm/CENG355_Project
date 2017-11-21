@@ -31,7 +31,7 @@ static void ADC_init()
 		 * Div 4 -> Latency: 2.625 ADC Clock Cycles
 		 */
 
-	//ADC1->CFGR2 |= ADC_CFGR2_CKMODE_0; //Set Div 2
+	ADC1->CFGR2 |= ADC_CFGR2_CKMODE_0; //Set Div 2
 
 	//Option 2 - 14MHz Asynchronous Clock
 		/*
@@ -113,10 +113,10 @@ extern int get_resistance_ohms()
 
 extern uint32_t get_adc()
 {
-	/* Wait until end of conversion */
-	//while(ADC1->CR & ADC_CR_ADSTART);
-
+	// Grab conversion from data register
 	uint32_t adc_val = ADC1->DR;
+
+	// Output to DAC
 	DAC->DHR12R1 = adc_val & 0xFFF;
 
 	return ADC1->DR;
