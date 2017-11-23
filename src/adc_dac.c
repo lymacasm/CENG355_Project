@@ -59,7 +59,7 @@ static void ADC_init()
 
 	//5.  Setting Conversion Mode to continous
 	ADC1->CFGR1 |= ADC_CFGR1_CONT | ADC_CFGR1_OVRMOD;
-	trace_printf("ADC CFGR1: %04x", ADC1->CFGR1);
+
 	//6.  Start ADC
 	ADC1->CR |= ADC_CR_ADEN; //Enables the ADC
 	while((ADC1->ISR & ADC_ISR_ADRDY) != 1); //Waits until ready
@@ -73,7 +73,7 @@ static void DAC_init()
 	DAC->SWTRIGR |= DAC_SWTRIGR_SWTRIG1;
 
 	//2. Output Buffer Enable
-	DAC->CR |= DAC_CR_BOFF1;
+	DAC->CR &= ~DAC_CR_BOFF1;
 
 	//5. DAC Enable
 	DAC->CR |= DAC_CR_EN1; //Enables DAC by setting Bit 0 = 1, Which is EN1
@@ -84,7 +84,7 @@ static void GPIO_init()
 {
 	RCC->AHBENR |= RCC_AHBENR_GPIOCEN | RCC_AHBENR_GPIOAEN;
 	GPIOC->MODER |= (GPIO_MODER_MODER0_1 | GPIO_MODER_MODER0_0); //SETS Pin C0 Bits to 11 which is Analog Mode (ADC_IN10)
-	GPIOA->MODER |= (GPIO_MODER_MODER4_1 | GPIO_MODER_MODER4_0); //Sets Pin A4 Bits to 11 which is Analog Mode
+	GPIOA->MODER |= (GPIO_MODER_MODER4_1 | GPIO_MODER_MODER4_0); //Sets Pin A4 Bits to 11 which is Analog Mode (DAC_CH1)
 }
 
 extern void adc_dac_init()
@@ -117,7 +117,9 @@ extern uint32_t get_adc()
 	uint32_t adc_val = ADC1->DR;
 
 	// Output to DAC
-	DAC->DHR12R1 = adc_val & 0xFFF;
+	//DAC->DHR12R1 = adc_val & 0xFFF;
+	DAC->DHR12R1 = adc_val;
+	trace_printf("ADC: 0x%x, DAC: 0x%x\n", adc_val, DAC->DOR1);
 
 	return ADC1->DR;
 }
