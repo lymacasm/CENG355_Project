@@ -18,7 +18,7 @@ static void ADC_init()
 	ADC1->CR &= ~(ADC_CR_ADEN); //Sets ADEN bit to 0 which disables the ADC
 	ADC1->CR |= (ADC_CR_ADCAL); //Starts Calibration by setting bit to 1
 
-	while((ADC1->CR & ADC_CR_ADCAL) == 1);
+	while((ADC1->CR & ADC_CR_ADCAL) != 0);
 
 	//2. Set up ADC Clock
 
@@ -59,10 +59,12 @@ static void ADC_init()
 
 	//5.  Setting Conversion Mode to continous
 	ADC1->CFGR1 |= ADC_CFGR1_CONT | ADC_CFGR1_OVRMOD;
-	trace_printf("ADC CFGR1: %04x", ADC1->CFGR1);
+
 	//6.  Start ADC
+	ADC1->ISR |= ADC_ISR_ADRDY;
 	ADC1->CR |= ADC_CR_ADEN; //Enables the ADC
 	while((ADC1->ISR & ADC_ISR_ADRDY) != 1); //Waits until ready
+	ADC1->CR |= ADC_CR_ADEN;
 	ADC1->CR |= ADC_CR_ADSTART; //Sets ADSTART to 1
 }
 
@@ -73,7 +75,7 @@ static void DAC_init()
 	DAC->SWTRIGR |= DAC_SWTRIGR_SWTRIG1;
 
 	//2. Output Buffer Enable
-	DAC->CR |= DAC_CR_BOFF1;
+	DAC->CR &= ~DAC_CR_BOFF1;
 
 	//5. DAC Enable
 	DAC->CR |= DAC_CR_EN1; //Enables DAC by setting Bit 0 = 1, Which is EN1
@@ -114,10 +116,11 @@ extern int get_resistance_ohms()
 extern uint32_t get_adc()
 {
 	// Grab conversion from data register
-	uint32_t adc_val = ADC1->DR;
+	int32_t adc_val = ADC1->DR;
 
 	// Output to DAC
-	DAC->DHR12R1 = adc_val & 0xFFF;
+	//DAC->DHR12R1 = (uint32_t)( -( (adc_val) * (adc_val - 8190) ) / (4095) ) & 0xFFF;
+	DAC->DHR12R1 = (uint32_t)( (-( (adc_val) * (adc_val - 8190) ) / (5733)) + 1170) & 0xFFF;
 
 	return ADC1->DR;
 }
